@@ -1,3 +1,4 @@
+import { isPT } from './i18n.js';
 import { css } from './utils.js';
 import { runBrandIntro } from './intro.js';
 import { prepareEditorialMotion, wireEditorialReveals, wireScrollMotion, enterHero } from './motion.js';
@@ -81,16 +82,17 @@ function wireScroll(refs, state, cleanup) {
 function wireRotator(refs, cleanup) {
   const els = [refs.rotatorRef.current, refs.rotatorRefSm.current].filter(Boolean);
   if (!els.length || prefersReducedMotion()) return;
-  const words = ['you', 'family', 'guests', 'move-in day', "what's next"];
+  const wordsEn = ['you', 'family', 'guests', 'move-in day', "what's next"];
+  const wordsPt = ['você', 'a família', 'as visitas', 'a mudança', 'o que vier'];
   let i = 0;
   const id = setInterval(() => {
-    i = (i + 1) % words.length;
+    i = (i + 1) % wordsEn.length;
     els.forEach((el) => {
       el.style.transition = 'transform .45s cubic-bezier(.65,0,.35,1), opacity .45s';
       el.style.transform = 'translateY(-110%)';
       el.style.opacity = '0';
       setTimeout(() => {
-        el.textContent = words[i];
+        el.textContent = (isPT() ? wordsPt : wordsEn)[i];
         el.style.transition = 'none';
         el.style.transform = 'translateY(110%)';
         requestAnimationFrame(() => {
@@ -108,7 +110,8 @@ function wireServices(root, refs, cleanup) {
   const panels = root.querySelectorAll('[data-svc-panel]');
   const medias = root.querySelectorAll('[data-svc-media]');
   const lines = root.querySelectorAll('[data-svc-line]');
-  const labels = ['Standard cleaning', 'Detailed cleaning', 'Move-in & move-out', 'Office cleaning'];
+  const labelsEn = ['Standard cleaning', 'Detailed cleaning', 'Move-in & move-out', 'Office cleaning'];
+  const labelsPt = ['Limpeza padrão', 'Limpeza detalhada', 'Pré e pós-mudança', 'Limpeza de escritório'];
   const labelEl = refs.svcLabelRef.current, numEl = refs.svcNumRef.current;
   let current = -1;
   function activate(i) {
@@ -126,7 +129,7 @@ function wireServices(root, refs, cleanup) {
       const on = parseInt(l.getAttribute('data-svc-line'), 10) === i;
       l.style.width = on ? '84px' : '0px';
     });
-    if (labelEl) labelEl.textContent = labels[i];
+    if (labelEl) labelEl.textContent = (isPT() ? labelsPt : labelsEn)[i];
     if (numEl) numEl.textContent = '0' + (i + 1);
   }
   if (!('IntersectionObserver' in window)) { activate(0); return; }

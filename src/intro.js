@@ -84,31 +84,52 @@ export function runBrandIntro(root, refs, props, onReady) {
   // Never leave a visitor behind a loading screen, including failed image decoding.
   schedule(() => finish(true), 5400);
 
+  // Where the big sparkle lands, in page and stage coordinates.
+  const stage = el.querySelector('.bt-stage');
+  const r = stage.getBoundingClientRect();
+  const SX = .756, SY = .142;
+  const px = ((r.left + r.width * SX) / window.innerWidth * 100).toFixed(1) + '%';
+  const py = ((r.top + r.height * SY) / window.innerHeight * 100).toFixed(1) + '%';
+  const dx = r.width * (.5 - SX), dy = r.height * (.46 - SY);
+
   animate(el.querySelector('.cs-intro__halo'), [{ opacity: .18, transform: 'scale(.8)' }, { opacity: .7, offset: .4 }, { opacity: 0, transform: 'scale(1.35)' }], 1700);
-  animate(el.querySelector('.cs-intro__paper'), [{ clipPath: 'circle(0% at 65% 38%)' }, { clipPath: 'circle(150% at 65% 38%)' }], 1250, 420, 'cubic-bezier(.55,0,.2,1)');
+  animate(el.querySelector('.cs-intro__paper'), [{ clipPath: `circle(0% at ${px} ${py})` }, { clipPath: `circle(150% at ${px} ${py})` }], 1250, 420, 'cubic-bezier(.55,0,.2,1)');
   animate(el.querySelector('.cs-intro__top'), [{ opacity: 0 }, { opacity: .55, offset: .3 }, { opacity: 0 }], 1700);
   animate(el.querySelector('.cs-intro__bottom'), [{ color: '#efe1e6' }, { color: '#8a5a6c' }], 600, 850);
-  animate(el.querySelector('.cs-intro__rule i'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 3180, 0, 'linear');
+  animate(el.querySelector('.cs-intro__rule i'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 3240, 0, 'linear');
 
-  // Logo: opens from the centre like a lens, settles with a small scale-down.
-  animate(el.querySelector('[data-intro-logo]'), [
-    { opacity: 0, clipPath: 'circle(0% at 50% 42%)', transform: 'scale(1.08)', filter: 'blur(10px)' },
-    { opacity: 1, clipPath: 'circle(38% at 50% 42%)', transform: 'scale(1.04)', filter: 'blur(3px)', offset: .45 },
-    { opacity: 1, clipPath: 'circle(100% at 50% 42%)', transform: 'scale(1)', filter: 'blur(0px)' }
-  ], 1500, 380, 'cubic-bezier(.45,0,.18,1)');
+  // Macro camera move: the big sparkle starts huge in the middle and flies into the logo.
+  const C = 'translate(-50%,-50%) ';
+  animate(el.querySelector('[data-intro-star="0"]'), [
+    { opacity: 0, transform: `${C}translate(${dx}px,${dy}px) rotate(-16deg) scale(9)` },
+    { opacity: 1, transform: `${C}translate(${dx}px,${dy}px) rotate(-12deg) scale(8.2)`, offset: .16 },
+    { opacity: 1, transform: `${C}translate(${dx * .5}px,${dy * .5}px) rotate(-5deg) scale(4)`, offset: .55 },
+    { opacity: 1, transform: `${C}translate(0,0) rotate(0deg) scale(1)` }
+  ], 1650, 0, 'cubic-bezier(.45,0,.18,1)');
   el.querySelectorAll('[data-intro-star]').forEach((star, i) => {
-    animate(star, [
-      { opacity: 0, transform: 'translate(-50%,-50%) scale(.2) rotate(-60deg)' },
-      { opacity: 1, transform: 'translate(-50%,-50%) scale(1.35) rotate(10deg)', offset: .55 },
-      { opacity: 1, transform: 'translate(-50%,-50%) scale(1) rotate(0deg)' }
-    ], 620, 1500 + i * 130, 'cubic-bezier(.22,1,.36,1)');
-    animate(star, [{ opacity: 1 }, { opacity: 0 }], 420, 2600 + i * 60, 'linear', 'forwards');
+    if (!i) return;
+    const dir = i % 2 ? -1 : 1;
+    animate(star, [{ opacity: 0, transform: `${C}translate(${dir * (26 + i * 6)}px,${24 - i * 9}px) rotate(${dir * 18}deg) scale(.55)` }, { opacity: 1, transform: `${C}translate(0,0) rotate(0deg) scale(1)` }], 850, 1040 + i * 70);
+  });
+  // The symbol spreads out from the sparkle; the lettering is written in from the left.
+  animate(el.querySelector('[data-intro-sym]'), [
+    { opacity: 0, clipPath: `circle(0% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(8px)', transform: 'scale(1.04)' },
+    { opacity: 1, clipPath: `circle(60% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(2px)', offset: .5 },
+    { opacity: 1, clipPath: `circle(160% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(0px)', transform: 'scale(1)' }
+  ], 1300, 1250, 'cubic-bezier(.55,0,.2,1)');
+  animate(el.querySelector('[data-intro-word]'), [
+    { opacity: 0, clipPath: 'inset(0 100% 0 0)', transform: 'translateY(3%)' },
+    { opacity: 1, clipPath: 'inset(0 0% 0 0)', transform: 'translateY(0)' }
+  ], 1000, 1800, 'cubic-bezier(.35,.05,.3,1)');
+  el.querySelectorAll('[data-intro-star]').forEach(star => {
+    // No backwards fill: the handoff must not override the stars' entrance opacity.
+    animate(star, [{ opacity: 1 }, { opacity: 0 }], 280, 2700, 'linear', 'forwards');
   });
   animate(el.querySelector('[data-intro-shine]'), [
     { opacity: 0, transform: 'translateX(-130%) skewX(-18deg)' },
     { opacity: .9, offset: .3 },
     { opacity: 0, transform: 'translateX(230%) skewX(-18deg)' }
-  ], 900, 2050, 'cubic-bezier(.4,0,.2,1)');
-  schedule(() => finish(), 3150);
+  ], 760, 2780, 'cubic-bezier(.4,0,.2,1)');
+  schedule(() => finish(), 3400);
   return destroy;
 }

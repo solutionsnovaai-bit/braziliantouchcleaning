@@ -8,6 +8,7 @@ export function prepareEditorialMotion(root, refs, cleanup) {
   const restorations = [];
   root.querySelectorAll('main h2, [data-svc-panel] h3').forEach(heading => {
     const label = heading.getAttribute('aria-label');
+    if (heading.__en == null) heading.__en = heading.innerHTML;
     heading.setAttribute('aria-label', heading.textContent.replace(/\s+/g, ' ').trim());
     heading.classList.add('cs-heading');
     const hadReveal = heading.hasAttribute('data-reveal');
@@ -169,4 +170,31 @@ export function enterHero(root, refs, cleanup) {
   const nav = refs.navRef.current;
   if (nav) animations.push(nav.animate([{ opacity: 0, translate: '0 -16px' }, { opacity: 1, translate: '0 0' }], { duration: 950, delay: 180, fill: 'both', easing: OUT }));
   cleanup.push(() => animations.forEach(animation => animation.cancel()));
+}
+
+
+/** Rebuilds the word masks of a heading after its copy changes (language switch). */
+export function resplitHeading(heading) {
+  heading.setAttribute('aria-label', heading.textContent.replace(/\s+/g, ' ').trim());
+  if (!heading.classList.contains('cs-heading')) return;
+  const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  let index = 0;
+  textNodes.forEach(node => {
+    if (!node.textContent.trim()) return;
+    const fragment = document.createDocumentFragment();
+    node.textContent.split(/(\s+)/).filter(Boolean).forEach(token => {
+      if (/^\s+$/.test(token)) { fragment.appendChild(document.createTextNode(token)); return; }
+      const item = document.createElement('span');
+      item.className = 'cs-word';
+      item.setAttribute('aria-hidden', 'true');
+      item.style.setProperty('--word-delay', `${Math.min(index++, 12) * 38}ms`);
+      const inner = document.createElement('span');
+      inner.textContent = token;
+      item.appendChild(inner);
+      fragment.appendChild(item);
+    });
+    node.replaceWith(fragment);
+  });
 }

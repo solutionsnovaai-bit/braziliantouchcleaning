@@ -1,6 +1,8 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import { css } from './utils.js';
 import { initSite } from './behaviors.js';
+import { applyLang, getLang, saveLang, isPT } from './i18n.js';
+import { resplitHeading } from './motion.js';
 import BrandIntro from './BrandIntro.jsx';
 import ScrollScene from './ScrollScene.jsx';
 import './motion.css';
@@ -33,6 +35,43 @@ const SZ_STYLE = '(max-width:1020px) 92vw, 44vw';
 const SZ_CARD = '(max-width:640px) 92vw, (max-width:1020px) 46vw, 31vw';
 const SZ_LOOP = '(max-width:900px) 160px, 345px';
 const SZ_LOOP_WIDE = '(max-width:900px) 280px, 615px';
+
+// Language switch: United States on one side, Brazil on the other.
+const FLAG_US = (
+  <svg viewBox="0 0 30 30" aria-hidden="true">
+    <defs><clipPath id="bt-flag-us"><circle cx="15" cy="15" r="15" /></clipPath></defs>
+    <g clipPath="url(#bt-flag-us)">
+      <rect width="30" height="30" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map((i) => <rect key={i} y={i * 30 / 13} width="30" height={30 / 13} fill="#B22234" />)}
+      <rect width="14" height={30 / 13 * 7} fill="#3C3B6E" />
+      {[[3, 3], [7, 3], [11, 3], [5, 6.5], [9, 6.5], [3, 10], [7, 10], [11, 10], [5, 13.5], [9, 13.5]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r=".9" fill="#fff" />)}
+    </g>
+  </svg>
+);
+const FLAG_BR = (
+  <svg viewBox="0 0 30 30" aria-hidden="true">
+    <defs><clipPath id="bt-flag-br"><circle cx="15" cy="15" r="15" /></clipPath></defs>
+    <g clipPath="url(#bt-flag-br)">
+      <rect width="30" height="30" fill="#009C3B" />
+      <path d="M15 4.2 28.4 15 15 25.8 1.6 15Z" fill="#FFDF00" />
+      <circle cx="15" cy="15" r="6.3" fill="#002776" />
+      <path d="M8.9 13.9c3.9-1.1 8.3-.4 12 1.9" stroke="#fff" strokeWidth="1.2" fill="none" />
+    </g>
+  </svg>
+);
+
+function LangSwitch({ onChange }) {
+  const [lang, setLang] = useState(getLang);
+  const pt = lang === 'pt';
+  const toggle = () => { const next = pt ? 'en' : 'pt'; setLang(next); onChange(next); };
+  return (
+    <button type="button" role="switch" aria-checked={pt} aria-label="Switch language" title="English / Português" className="bt-lang" data-lang={lang} onClick={toggle}>
+      <span className="bt-lang__knob" aria-hidden="true" />
+      <span className="bt-lang__flag" data-flag="us">{FLAG_US}</span>
+      <span className="bt-lang__flag" data-flag="br">{FLAG_BR}</span>
+    </button>
+  );
+}
 
 export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader = true, sparkleHover = true } = {}) {
   const rootRef = useRef(null);
@@ -115,6 +154,16 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
     { q: 'Do you bring your own supplies?', a: 'Yes, we bring our own products and equipment. If you prefer a specific product for your home, just let us know.' },
     { q: 'How do I get a quote?', a: 'Tell us the size of your home, the service you need and your area, by WhatsApp, text or the form below. We reply with a free quote, usually the same day.' }
   ];
+
+  useLayoutEffect(() => {
+    if (getLang() === 'pt') applyLang(rootRef.current, 'pt');
+  }, []);
+
+  function onLang(lang) {
+    saveLang(lang);
+    applyLang(rootRef.current, lang, resplitHeading);
+    rootRef.current?.querySelector('main')?.animate?.([{ opacity: .45 }, { opacity: 1 }], { duration: 480, easing: 'cubic-bezier(.16,1,.3,1)' });
+  }
 
   useEffect(() => {
     const refs = {
@@ -205,27 +254,29 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
     if (!msg) return;
     if (formAltRef.current) formAltRef.current.style.display = 'none';
     if (!valid) {
-      msg.textContent = 'Please add your name so we know who to reply to.';
+      msg.textContent = isPT() ? 'Coloque seu nome para sabermos a quem responder.' : 'Please add your name so we know who to reply to.';
       msg.style.color = '';
       msg.style.opacity = '1';
       return;
     }
     // The request goes straight to the business on WhatsApp, already written out.
     const val = (n) => { const f = form.querySelector('[name="' + n + '"]'); return f ? f.value.trim() : ''; };
-    const date = val('date').split('-').reverse().join('/');
+    const [yy, mm, dd] = val('date').split('-');
+    const date = yy ? (isPT() ? [dd, mm, yy] : [mm, dd, yy]).join('/') : '';
+    const pt = isPT();
     const lines = [
-      'Name: ' + val('name'),
-      val('email') && 'Email: ' + val('email'),
-      val('phone') && 'Phone: ' + val('phone'),
-      'Home type: ' + val('propertyType'),
-      val('service') && 'Service: ' + val('service'),
-      date && 'Preferred date: ' + date,
-      val('postcode') && 'ZIP code / area: ' + val('postcode'),
+      (pt ? 'Nome: ' : 'Name: ') + val('name'),
+      val('email') && (pt ? 'E-mail: ' : 'Email: ') + val('email'),
+      val('phone') && (pt ? 'Telefone: ' : 'Phone: ') + val('phone'),
+      (pt ? 'Tipo de imóvel: ' : 'Home type: ') + val('propertyType'),
+      val('service') && (pt ? 'Serviço: ' : 'Service: ') + val('service'),
+      date && (pt ? 'Data preferida: ' : 'Preferred date: ') + date,
+      val('postcode') && (pt ? 'ZIP code / região: ' : 'ZIP code / area: ') + val('postcode'),
       val('message') && '\n' + val('message')
     ].filter(Boolean);
-    const link = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent("Hi Brazilian Touch Cleaning! I'd like a free quote.\n\n" + lines.join('\n'));
+    const link = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent((pt ? 'Olá, Brazilian Touch Cleaning! Gostaria de um orçamento grátis.' : "Hi Brazilian Touch Cleaning! I'd like a free quote.") + '\n\n' + lines.join('\n'));
     window.open(link, '_blank', 'noopener');
-    msg.textContent = 'WhatsApp should now be open with your request ready, just press send. Nothing opened? Call or text ' + PHONE + ' or';
+    msg.textContent = pt ? 'O WhatsApp deve ter aberto com o seu pedido pronto, é só tocar em enviar. Não abriu? Ligue ou mande SMS para ' + PHONE + ' ou' : 'WhatsApp should now be open with your request ready, just press send. Nothing opened? Call or text ' + PHONE + ' or';
     msg.style.color = 'rgba(251,246,244,.9)';
     msg.style.opacity = '1';
     const alt = formAltRef.current;
@@ -254,7 +305,7 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
   {/* NAV */}
   <header ref={navRef} style={css(`position:fixed;top:0;left:0;right:0;z-index:800;padding:16px clamp(16px,4vw,48px);display:grid;grid-template-columns:auto 1fr auto;align-items:center;column-gap:clamp(16px,3vw,48px);transition:background .5s cubic-bezier(.16,1,.3,1),backdrop-filter .5s,box-shadow .5s,padding .5s`)}>
     <a href="#top" onClick={onNavClick} data-nav-logo="1" style={css(`display:flex;align-items:center;transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .4s`)} data-hover="transform:translateY(-2px)">
-      <img src="assets/brand/logo-pin-nav.webp" alt="Brazilian Touch Cleaning" width="140" height="200" style={css(`height:clamp(50px,4.8vw,66px);width:auto;display:block`)} />
+      <img src="assets/brand/logo-horizontal.webp" alt="Brazilian Touch Cleaning" width="668" height="240" style={css(`height:clamp(50px,4.4vw,62px);width:auto;display:block`)} />
     </a>
     <nav data-r="navlinks" aria-label="Primary" style={css(`display:flex;align-items:center;justify-content:center;gap:clamp(12px,1.9vw,30px)`)}>
       <a href="#services" onClick={onNavClick} style={css(`font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:500;color:var(--ink);padding:8px 0;white-space:nowrap;transition:color .35s`)} data-hover="color:#D93A72">Services</a>
@@ -263,7 +314,8 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
       <a href="#commercial" onClick={onNavClick} style={css(`font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:500;color:var(--ink);padding:8px 0;white-space:nowrap;transition:color .35s`)} data-hover="color:#D93A72">Office cleaning</a>
       <a href="#standard" onClick={onNavClick} style={css(`font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:500;color:var(--ink);padding:8px 0;white-space:nowrap;transition:color .35s`)} data-hover="color:#D93A72">Why Us</a>
     </nav>
-    <div style={css(`display:flex;align-items:center;justify-content:flex-end;gap:12px`)}>
+    <div style={css(`display:flex;align-items:center;justify-content:flex-end;gap:10px`)}>
+      <LangSwitch onChange={onLang} />
       <a data-r="navcta" href="#contact" onClick={onNavClick} data-magnetic="1" style={css(`display:inline-flex;align-items:center;gap:10px;background:var(--forest);color:#fff;padding:13px 20px;border-radius:999px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;white-space:nowrap;min-height:44px;transition:background .4s,color .4s,transform .3s cubic-bezier(.16,1,.3,1)`)} data-hover="background:#D93A72;color:#fff">Request a quote <span style={css(`display:inline-block`)}>↗</span></a>
       <button data-r="burger" type="button" aria-label="Open menu" onClick={openMenu} style={css(`display:none;align-items:center;gap:10px;background:var(--forest);color:#fff;border:0;padding:13px 18px;border-radius:999px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;min-height:44px;cursor:pointer`)}>Menu</button>
     </div>
@@ -705,7 +757,7 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
         <div style={css(`font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(251,246,244,.5)`)}>Request a quote</div>
         <h2 style={css(`font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(2.2rem,5vw,4.4rem);line-height:.96;letter-spacing:-.025em;margin:22px 0 0`)}>Tell us about<br /><em style={css(`font-style:italic;color:var(--pink-lt)`)}>your home.</em></h2>
         <p style={css(`margin:24px 0 0;font-size:15.5px;line-height:1.7;color:rgba(251,246,244,.72);max-width:38ch`)}>Share the essentials, home size, area and the service you need, and we'll come back with a free quote on WhatsApp.</p>
-        <a href={WA_HELLO} target="_blank" rel="noopener" data-magnetic="1" style={css(`display:inline-flex;align-items:center;gap:12px;margin-top:30px;border:1px solid rgba(251,246,244,.3);color:var(--ivory);padding:16px 24px;border-radius:999px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;min-height:44px;transition:background .4s,color .4s,border-color .4s,transform .3s cubic-bezier(.16,1,.3,1)`)} data-hover="background:#FBF6F4;color:#1A1517;border-color:#FBF6F4">WhatsApp +1 (857) 346-9126</a>
+        <a href={WA_HELLO} data-wa="" target="_blank" rel="noopener" data-magnetic="1" style={css(`display:inline-flex;align-items:center;gap:12px;margin-top:30px;border:1px solid rgba(251,246,244,.3);color:var(--ivory);padding:16px 24px;border-radius:999px;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;min-height:44px;transition:background .4s,color .4s,border-color .4s,transform .3s cubic-bezier(.16,1,.3,1)`)} data-hover="background:#FBF6F4;color:#1A1517;border-color:#FBF6F4">WhatsApp +1 (857) 346-9126</a>
         <div style={css(`margin-top:18px`)}><a href="tel:+18573469126" style={css(`color:var(--ivory);font-size:15px;letter-spacing:.02em;border-bottom:1px solid rgba(251,246,244,.35);padding-bottom:3px;transition:color .35s,border-color .35s`)} data-hover="color:#F27BA3;border-color:#F27BA3">Call or text {PHONE}</a></div>
         <div style={css(`margin-top:36px;display:flex;flex-direction:column;gap:8px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(251,246,244,.5)`)}>
           <span>Everett, MA · Greater Boston</span>
@@ -758,11 +810,11 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
   </section>
 
   {/* FOOTER */}
-  <footer style={css(`background:#F1E3DE;color:var(--forest);padding:clamp(60px,7vw,110px) clamp(20px,5vw,72px) 30px;position:relative;overflow:hidden`)}>
+  <footer style={css(`background:#F6EAE3;color:var(--forest);padding:clamp(60px,7vw,110px) clamp(20px,5vw,72px) 30px;position:relative;overflow:hidden`)}>
     <div style={css(`max-width:1440px;margin:0 auto;position:relative;z-index:1`)}>
       <div style={css(`display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:36px`)}>
         <div>
-          <img src="assets/brand/logo-velvet-560.webp" width="560" height="560" loading="lazy" decoding="async" alt="Brazilian Touch Cleaning" style={css(`width:min(260px,60vw);height:auto;display:block;border-radius:3px`)} />
+          <img src="assets/brand/logo-velvet-cut.webp" width="540" height="755" loading="lazy" decoding="async" alt="Brazilian Touch Cleaning" style={css(`width:min(220px,52vw);height:auto;display:block`)} />
           <div style={css(`margin-top:20px;font-size:13px;line-height:1.7;color:rgba(26,21,23,.65)`)}>Professional home cleaning<br />30 Cabot St, Everett, MA 02149</div>
         </div>
         <nav aria-label="Footer" style={css(`display:flex;flex-direction:column;gap:12px;font-size:12px;letter-spacing:.16em;text-transform:uppercase`)}>
@@ -788,7 +840,7 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
   </main>
 
   {/* WHATSAPP FLOAT */}
-  <a ref={whatsRef} href={WA_HELLO} target="_blank" rel="noopener" aria-label="Message Brazilian Touch Cleaning on WhatsApp" data-cursor="Chat" style={css(`position:fixed;right:clamp(14px,2.4vw,32px);bottom:clamp(88px,11vh,120px);z-index:750;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--leaf);color:#fff;border:2.5px solid var(--pink);box-shadow:0 16px 40px rgba(20,14,17,.3),0 0 0 4px rgba(217,58,114,.14);opacity:0;transform:translate3d(0,26px,0);transition:opacity .6s cubic-bezier(.16,1,.3,1),background .4s,transform .3s cubic-bezier(.16,1,.3,1);will-change:transform`)} data-hover="transform:translate3d(0,-3px,0)">
+  <a ref={whatsRef} href={WA_HELLO} data-wa="" target="_blank" rel="noopener" aria-label="Message Brazilian Touch Cleaning on WhatsApp" data-cursor="Chat" style={css(`position:fixed;right:clamp(14px,2.4vw,32px);bottom:clamp(88px,11vh,120px);z-index:750;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--pink);color:#fff;border:2.5px solid #fff;box-shadow:0 16px 40px rgba(217,58,114,.38),0 0 0 4px rgba(217,58,114,.16);opacity:0;transform:translate3d(0,26px,0);transition:opacity .6s cubic-bezier(.16,1,.3,1),background .4s,transform .3s cubic-bezier(.16,1,.3,1);will-change:transform`)} data-hover="transform:translate3d(0,-3px,0)">
     <svg viewBox="0 0 32 32" width="27" height="27" aria-hidden="true" fill="currentColor"><path d="M16 3C8.8 3 3 8.8 3 16c0 2.3.6 4.5 1.7 6.4L3 29l6.8-1.7c1.9 1 4 1.6 6.2 1.6 7.2 0 13-5.8 13-13S23.2 3 16 3zm0 23.6c-2 0-3.9-.5-5.6-1.5l-.4-.2-4.1 1 1.1-4-.3-.4A10.5 10.5 0 1 1 16 26.6z"></path><path d="M22 19c-.3-.2-2-1-2.3-1.1-.3-.1-.5-.2-.8.2l-1 1.3c-.2.2-.4.3-.7.1-.4-.2-1.5-.6-2.8-1.7-1-.9-1.7-2-1.9-2.4-.2-.3 0-.5.2-.7l.5-.6c.2-.2.2-.4.4-.6.1-.2.1-.4 0-.6l-1-2.5c-.3-.6-.5-.5-.8-.5h-.7c-.2 0-.6.1-.9.5s-1.2 1.2-1.2 2.9 1.3 3.3 1.4 3.6c.2.2 2.5 3.9 6 5.3 2.4.9 2.9.8 3.4.7.5 0 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.4z"></path></svg>
   </a>
 
