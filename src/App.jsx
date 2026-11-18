@@ -343,7 +343,7 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
   <main id="main" tabIndex={-1}>
   {/* HERO */}
   <section id="top" style={css(`position:relative;min-height:100svh;display:flex;flex-direction:column;background:var(--paper);overflow:hidden`)}>
-    <div data-r="only-sm" style={css(`background:#F6EAE3;padding-top:clamp(72px,11vw,100px)`)}>
+    <div data-r="only-sm" style={css(`background:#F6EAE3;padding-top:clamp(86px,11vw,104px)`)}>
       <picture>
         <source media="(max-width:1020px)" type="image/webp" srcSet="assets/hero/hero-mobile-720.webp 720w, assets/hero/hero-mobile-1200.webp 1200w" sizes="(max-width:760px) 100vw, 760px" />
         <img src={PX} alt="Brazilian Touch Cleaning" width="1200" height="1200" decoding="async" style={css(`width:100%;max-width:560px;height:auto;display:block;margin:0 auto`)} />

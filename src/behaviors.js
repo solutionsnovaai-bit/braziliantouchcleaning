@@ -61,7 +61,7 @@ function wireScroll(refs, state, cleanup) {
         }
       }
       if (navLogo) {
-        const hide = small.matches && y <= 60;
+        const hide = false;
         navLogo.style.opacity = hide ? '0' : '1';
         navLogo.style.pointerEvents = hide ? 'none' : 'auto';
       }
