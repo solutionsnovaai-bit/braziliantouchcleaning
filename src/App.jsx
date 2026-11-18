@@ -29,8 +29,8 @@ const WHATSAPP = '18573469126';
 const WA_HELLO = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent("Hi Brazilian Touch Cleaning! I'd like a free quote for my home.");
 
 const SZ_PANEL_SM = '(max-width:1020px) 92vw, 1px';
-const SZ_PANEL = '(min-width:1021px) 46vw, 1px';
-const SZ_INSET = '(min-width:1021px) 15vw, 1px';
+const SZ_PANEL = '(min-width:1021px) 46vw, 92vw';
+const SZ_INSET = '(min-width:1021px) 15vw, 30vw';
 const SZ_STYLE = '(max-width:1020px) 92vw, 44vw';
 const SZ_CARD = '(max-width:640px) 92vw, (max-width:1020px) 46vw, 31vw';
 const SZ_LOOP = '(max-width:900px) 160px, 345px';
@@ -479,7 +479,7 @@ export default function App({ accentPink = '#D93A72', loopSpeed = 64, showLoader
           </div>
         </div>
 
-        <div data-r="hide-sm" style={css(`position:sticky;top:14vh;height:72vh;overflow:hidden;background:var(--forest-deep);border-radius:2px`)}>
+        <div data-r="svcmedia" style={css(`position:sticky;top:14vh;height:72vh;overflow:hidden;background:var(--forest-deep);border-radius:2px`)}>
           <div data-svc-media="0" style={css(`position:absolute;inset:0;opacity:1;transition:opacity .9s cubic-bezier(.16,1,.3,1)`)}>
             <img data-svc-main="1" {...gimg('g1', SZ_PANEL)} alt="Bright living room with polished hardwood floors" loading="lazy" style={css(`width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.02);transition:transform 6s cubic-bezier(.22,.61,.36,1)`)} />
             <figure style={css(`position:absolute;left:22px;bottom:76px;width:31%;margin:0;aspect-ratio:3/4;overflow:hidden;box-shadow:0 18px 44px rgba(20,14,17,.34);border:5px solid var(--ivory)`)}>

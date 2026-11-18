@@ -135,7 +135,7 @@ function wireServices(root, refs, cleanup) {
   if (!('IntersectionObserver' in window)) { activate(0); return; }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => { if (e.isIntersecting) activate(parseInt(e.target.getAttribute('data-svc-panel'), 10)); });
-  }, { threshold: 0, rootMargin: '-45% 0px -45% 0px' });
+  }, { threshold: 0, rootMargin: window.matchMedia('(max-width:1020px)').matches ? '-60% 0px -24% 0px' : '-45% 0px -45% 0px' });
   panels.forEach((p) => io.observe(p));
   activate(0);
   cleanup.push(() => io.disconnect());
