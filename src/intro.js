@@ -113,9 +113,9 @@ export function runBrandIntro(root, refs, props, onReady) {
   });
   // The symbol spreads out from the sparkle; the lettering is written in from the left.
   animate(el.querySelector('[data-intro-sym]'), [
-    { opacity: 0, clipPath: `circle(0% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(8px)', transform: 'scale(1.04)' },
-    { opacity: 1, clipPath: `circle(60% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(2px)', offset: .5 },
-    { opacity: 1, clipPath: `circle(160% at ${SX * 100}% ${SY * 100}%)`, filter: 'blur(0px)', transform: 'scale(1)' }
+    { opacity: 0, clipPath: `circle(0% at ${SX * 100}% ${SY * 100}%)`, transform: 'scale(1.04)' },
+    { opacity: 1, clipPath: `circle(60% at ${SX * 100}% ${SY * 100}%)`, offset: .5 },
+    { opacity: 1, clipPath: `circle(160% at ${SX * 100}% ${SY * 100}%)`, transform: 'scale(1)' }
   ], 1300, 1250, 'cubic-bezier(.55,0,.2,1)');
   animate(el.querySelector('[data-intro-word]'), [
     { opacity: 0, clipPath: 'inset(0 100% 0 0)', transform: 'translateY(3%)' },
